@@ -5,35 +5,33 @@ using System;
 
 public class BasicMovement : MonoBehaviour
 {
+    public GameObject parent;
     public bool jumping;
 
-    public float Kfr = 8.0f;
-    public float frict;
-    public const float gravity = -9.8f;
+    public float FrictionK = 2.0f;
+    public const float gravityK = -9.8f;
 
-    public float playerMass = 70.0f;
-    public float playerAcc = 1000.0f;
-    public float playerSpd = 0.6f;
+    public const float playerMassK = 70.0f;
+    public const float playerAccK = 300.0f;
 
-    public float inputHorizF;
-    public float inputVertF = 0.0f;
-
-    public float resultantHF;
-    public float resultantVF;
-
-    public float horizA = 0.0f;
-    public float vertA = 0.0f;
-    public float horizV = 0.0f;
-    public int Dir;
-    public float vertV = 0.0f;
-
+    public float inputFx = 0.0f;
+    public float inputFy = 0.0f;
+    public float groundFriction;
+    public float Fx;
+    public float Fy;
+    public float Ax = 0.0f;
+    public float Ay = 0.0f;
+    public float Vx = 0.0f;
+    public int Dir = 1;
+    public float Vy = 0.0f;
     public Vector3 disp;
+    float calcFrictSlow;
 
     void Update()
     {
         if (transform.position.y <= 0)
         {
-            vertV = 0.0f;
+            Vy = 0.0f;
         }
         if (transform.position.y > 0.02)
         {
@@ -46,54 +44,65 @@ public class BasicMovement : MonoBehaviour
 
         if (!jumping & Input.GetKey("space"))
         {
-            inputVertF = playerAcc*10;
+            inputFy = playerAccK * 10;
         }
-        else 
+        else
         {
-            inputVertF = 0.0f;
+            inputFy = 0.0f;
         }
 
-        inputHorizF = (Input.GetKey("a")  & !Input.GetKey("d") ? -1.0f :
-                 !Input.GetKey("a") &  Input.GetKey("d") ? +1.0f : 0.0f) * playerAcc;
+        inputFx = (Input.GetKey("a") & !Input.GetKey("d") ? -1.0f :
+                 !Input.GetKey("a") & Input.GetKey("d") ? +1.0f : 0.0f) * playerAccK;
 
-        if (horizV > 0)
+        float oldVx = Vx;
+        float newVx = Vx;
+        if (jumping)
+        {
+            inputFx = 0;
+            groundFriction = 0;
+        }
+        else
+        {
+            groundFriction = FrictionK * playerMassK * -Dir;
+        }
+
+        Ax = inputFx / playerMassK;
+        newVx += 0.5f * Ax * Time.deltaTime * 30;
+        calcFrictSlow = 0.5f * (groundFriction / playerMassK) * Time.deltaTime * 30;
+        if (Math.Abs(calcFrictSlow) > Math.Abs(newVx))
+        {
+            newVx = (oldVx/2);
+        }
+        else
+        {
+            newVx += calcFrictSlow;
+        }
+        
+
+        if (newVx > 0.0f)
         {
             Dir = 1;
         }
-        if (horizV < 0)
+        if (newVx < 0.0f)
         {
             Dir = -1;
         }
-        if (horizV == 0)
+        if (newVx == 0)
         {
             Dir = 0;
         }
-        frict = Kfr * playerMass * -Dir;
+        Debug.Log(newVx);
 
-        if (Math.Abs(horizV) > playerSpd)
-        {
-            inputHorizF = 0;
-        }
-        if (jumping)
-        {
-            inputHorizF = 0;
-            frict = 0;
-        }
+        Fy = inputFy + gravityK * playerMassK;
+        Ay = Fy / playerMassK;
 
-        resultantHF = inputHorizF + frict;
-        resultantVF = inputVertF + gravity * playerMass;
-
-        horizA = resultantHF / playerMass;
-        vertA = resultantVF / playerMass;
-
-        horizV += 0.5f * horizA * Time.deltaTime;
-        
         if (transform.position.y >= 0)
         {
-            vertV += 0.5f * vertA * Time.deltaTime;
+            Vy += 0.5f * Ay * Time.deltaTime;
         }
 
-        disp = new Vector3(horizV*10, vertV, 0.0f) * Time.deltaTime;
+        disp = new Vector3(newVx, Vy, 0.0f) * Time.deltaTime;
+        Vx = newVx;
 
         transform.position = transform.position + disp;
 
@@ -109,7 +118,5 @@ public class BasicMovement : MonoBehaviour
         {
             transform.position = new Vector3(-3.5f, transform.position.y, 0.0f);
         }
-
-        Debug.Log(horizV);
     }
 }
