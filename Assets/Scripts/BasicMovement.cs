@@ -44,7 +44,7 @@ public class BasicMovement : MonoBehaviour
 
         if (!jumping & Input.GetKey("space"))
         {
-            inputFy = playerAccK * 10;
+            inputFy = playerAccK * 50;
         }
         else
         {
@@ -77,7 +77,6 @@ public class BasicMovement : MonoBehaviour
         {
             newVx += calcFrictSlow;
         }
-        
 
         if (newVx > 0.0f)
         {
